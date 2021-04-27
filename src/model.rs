@@ -52,3 +52,21 @@ pub struct GenericResponse<T> {
     pub status: String,
     pub data: Option<T>,
 }
+
+impl<T> GenericResponse<T> {
+    pub fn default_error(msg: &str) -> Self {
+        Self {
+            code: 1,
+            status: String::from(msg),
+            data: None,
+        }
+    }
+
+    pub fn no_data() -> Self {
+        Self {
+            code: 1,
+            status: String::from("No data found"),
+            data: None,
+        }
+    }
+}

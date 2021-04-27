@@ -14,11 +14,7 @@ use diesel::insert_into;
 pub fn get_all_users(
     pool: web::Data<Pool>,
 ) -> Result<GenericResponse<Vec<User>>, diesel::result::Error> {
-    let mut resp: GenericResponse<Vec<User>> = GenericResponse {
-        code: 1,
-        status: String::from("No data found"),
-        data: None,
-    };
+    let mut resp: GenericResponse<Vec<User>> = GenericResponse::no_data();
     let conn = pool.get().unwrap();
     let items = users.load::<User>(&conn)?;
     if items.len() > 0 {
@@ -33,11 +29,7 @@ pub fn get_user_by_userid(
     pool: web::Data<Pool>,
     user_id: i32,
 ) -> Result<GenericResponse<User>, diesel::result::Error> {
-    let mut resp: GenericResponse<User> = GenericResponse {
-        code: 1,
-        status: String::from("No data found"),
-        data: None,
-    };
+    let mut resp: GenericResponse<User> = GenericResponse::no_data();
     let conn = pool.get().unwrap();
     let data = users.find(user_id).first::<User>(&conn);
     if let Ok(u) = data {
@@ -52,11 +44,7 @@ pub fn add_single_user(
     db: web::Data<Pool>,
     item: web::Json<InputUser>,
 ) -> Result<GenericResponse<String>, diesel::result::Error> {
-    let mut resp: GenericResponse<String> = GenericResponse {
-        code: 1,
-        status: String::from("User creation failed"),
-        data: None,
-    };
+    let mut resp = GenericResponse::default_error("User creation failed");
     let conn = db.get().unwrap();
     let passwd = util::encryptpass(&item.password);
     let new_user = NewUser {
@@ -81,11 +69,7 @@ pub fn perform_login_user(
     db: web::Data<Pool>,
     item: web::Json<LoginUser>,
 ) -> Result<GenericResponse<User>, diesel::result::Error> {
-    let mut resp: GenericResponse<User> = GenericResponse {
-        code: 1,
-        status: String::from("Invalid username or password"),
-        data: None,
-    };
+    let mut resp = GenericResponse::default_error("Invalid username or password");
     let conn = db.get().unwrap();
     let encoded_passwd = util::encryptpass(&item.password);
     let result = users
@@ -109,11 +93,7 @@ pub fn update_single_user(
     db: web::Data<Pool>,
     item: web::Json<InputUser>,
 ) -> Result<GenericResponse<String>, diesel::result::Error> {
-    let mut resp: GenericResponse<String> = GenericResponse {
-        code: 1,
-        status: String::from("User update failed"),
-        data: None,
-    };
+    let mut resp = GenericResponse::default_error("User update failed");
     let conn = db.get().unwrap();
     let userinfo: Result<User, diesel::result::Error> =
         users.find(&item.id.unwrap()).first::<User>(&conn);
