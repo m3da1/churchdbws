@@ -1,6 +1,6 @@
 use super::schema::users::dsl::*;
 use super::Pool;
-use crate::diesel::ExpressionMethods;
+use crate::{diesel::ExpressionMethods, model::ChangeUserPassword};
 use crate::{
     diesel::QueryDsl,
     model::{GenericResponse, LoginUser, NewUser, User},
@@ -139,6 +139,41 @@ pub fn delete_single_user(
         u.lastupdatetime = Some(chrono::Local::now().naive_local());
         let updated = diesel::update(users.find(u.id))
             .set(&u)
+            .execute(&conn)
+            .unwrap();
+        if updated > 0 {
+            resp.code = 0;
+            resp.status = String::from("Success");
+        }
+    }
+    Ok(resp)
+}
+
+pub fn update_password(
+    db: web::Data<Pool>,
+    item: ChangeUserPassword,
+) -> Result<GenericResponse<String>, diesel::result::Error> {
+    let mut resp = GenericResponse::default_error("Password update failed");
+    let conn = db.get().unwrap();
+    if (&item.oldpassword).eq(&item.newpassword) {
+        resp.status = String::from("Passwords are identical");
+        return Ok(resp);
+    }
+    let userinfo: Result<User, diesel::result::Error> = users.find(&item.id).first::<User>(&conn);
+    if let Err(_) = userinfo {
+        resp.status = String::from("User not found");
+        return Ok(resp);
+    }
+    let encoded_passwd = util::encryptpass(&item.oldpassword);
+    if let Ok(mut user) = userinfo {
+        if !encoded_passwd.eq(user.password.unwrap().as_str()) {
+            resp.status = String::from("Invalid initial password");
+            return Ok(resp);
+        }
+        user.password = Some(util::encryptpass(&item.newpassword));
+        user.lastupdatetime = Some(chrono::Local::now().naive_local());
+        let updated = diesel::update(users.find(user.id))
+            .set(&user)
             .execute(&conn)
             .unwrap();
         if updated > 0 {

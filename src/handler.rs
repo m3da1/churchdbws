@@ -2,7 +2,13 @@ use super::Pool;
 use actix_web::web;
 use actix_web::{Error, HttpResponse};
 
-use crate::{db::{add_single_user, delete_single_user, get_all_users, get_user_by_userid, perform_login_user, update_single_user}, model::{InputUser, LoginUser}};
+use crate::{
+    db::{
+        add_single_user, delete_single_user, get_all_users, get_user_by_userid, perform_login_user,
+        update_password, update_single_user,
+    },
+    model::{ChangeUserPassword, InputUser, LoginUser},
+};
 
 pub async fn get_users(db: web::Data<Pool>) -> Result<HttpResponse, Error> {
     Ok(web::block(move || get_all_users(db))
@@ -57,7 +63,19 @@ pub async fn delete_user_by_id(
     db: web::Data<Pool>,
     user_id: web::Path<i32>,
 ) -> Result<HttpResponse, Error> {
-    Ok(web::block(move || delete_single_user(db, user_id.into_inner()))
+    Ok(
+        web::block(move || delete_single_user(db, user_id.into_inner()))
+            .await
+            .map(|resp| HttpResponse::Ok().json(resp))
+            .map_err(|_| HttpResponse::InternalServerError())?,
+    )
+}
+
+pub async fn change_user_password(
+    db: web::Data<Pool>,
+    item: web::Json<ChangeUserPassword>,
+) -> Result<HttpResponse, Error> {
+    Ok(web::block(move || update_password(db, item.into_inner()))
         .await
         .map(|resp| HttpResponse::Ok().json(resp))
         .map_err(|_| HttpResponse::InternalServerError())?)

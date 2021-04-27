@@ -28,6 +28,13 @@ pub struct InputUser {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct ChangeUserPassword {
+    pub id: i32,
+    pub oldpassword: String,
+    pub newpassword: String,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct LoginUser {
     pub username: String,
     pub password: String,
