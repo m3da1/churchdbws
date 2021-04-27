@@ -104,7 +104,10 @@ pub fn update_single_user(
             u.msisdn = Some(item.mobile.clone());
             u.username = Some(item.username.clone());
             u.lastupdatetime = Some(chrono::Local::now().naive_local());
-            let updated_result = diesel::update(users.find(&item.id.unwrap())).set(&u).execute(&conn).unwrap();
+            let updated_result = diesel::update(users.find(&item.id.unwrap()))
+                .set(&u)
+                .execute(&conn)
+                .unwrap();
             println!("Updated Result: {:?}", updated_result);
             if updated_result > 0 {
                 resp.code = 0;
@@ -114,6 +117,33 @@ pub fn update_single_user(
         Err(e) => {
             println!("User not found: ErrorMessage: {:?}", e);
             resp.status = String::from("User not found");
+        }
+    }
+    Ok(resp)
+}
+
+pub fn delete_single_user(
+    db: web::Data<Pool>,
+    user_id: i32,
+) -> Result<GenericResponse<String>, diesel::result::Error> {
+    let mut resp = GenericResponse::default_error("User deletion failed");
+    let conn = db.get().unwrap();
+    let userinfo: Result<User, diesel::result::Error> = users.find(user_id).first::<User>(&conn);
+    if let Err(e) = userinfo {
+        println!("Error message: {:?}", e);
+        resp.status = String::from("User not found");
+        return Ok(resp);
+    }
+    if let Ok(mut u) = userinfo {
+        u.status = Some(String::from("DELETED"));
+        u.lastupdatetime = Some(chrono::Local::now().naive_local());
+        let updated = diesel::update(users.find(u.id))
+            .set(&u)
+            .execute(&conn)
+            .unwrap();
+        if updated > 0 {
+            resp.code = 0;
+            resp.status = String::from("Success");
         }
     }
     Ok(resp)

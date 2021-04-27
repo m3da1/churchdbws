@@ -27,13 +27,12 @@ async fn main() -> std::io::Result<()> {
 
     // Start http server
     HttpServer::new(move || {
-        // let auth = HttpAuthentication::bearer(validator);
         App::new()
             .wrap(middleware::Logger::default())
-            // .wrap(auth)Ø
             .data(pool.clone())
             .route("/users", web::get().to(handler::get_users))
             .route("/users/{id}", web::get().to(handler::get_user_by_id))
+            .route("/users/{id}", web::delete().to(handler::delete_user_by_id))
             .route("/users", web::post().to(handler::add_user))
             .route("/users", web::put().to(handler::update_user))
             .route("/users/login", web::post().to(handler::login_user))
