@@ -106,8 +106,10 @@ pub fn update_single_user(
             u.lastupdatetime = Some(chrono::Local::now().naive_local());
             let updated_result = diesel::update(users.find(&item.id.unwrap())).set(&u).execute(&conn).unwrap();
             println!("Updated Result: {:?}", updated_result);
-            resp.code = 0;
-            resp.status = String::from("Success");
+            if updated_result > 0 {
+                resp.code = 0;
+                resp.status = String::from("Success");
+            }
         }
         Err(e) => {
             println!("User not found: ErrorMessage: {:?}", e);
