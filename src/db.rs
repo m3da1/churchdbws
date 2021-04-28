@@ -4,7 +4,10 @@ use super::schema::users::dsl::*;
 use super::Pool;
 use crate::{
     diesel::ExpressionMethods,
-    model::{ChangeUserPassword, InputMember, Member, NewMember, Stewardgroup},
+    model::{
+        ChangeUserPassword, InputMember, InputStewardgroup, Member, NewGroup, NewMember,
+        Stewardgroup,
+    },
 };
 use crate::{
     diesel::QueryDsl,
@@ -347,6 +350,44 @@ pub fn get_single_steward_group(
         resp.code = 0;
         resp.status = String::from("Success");
         resp.data = Some(g);
+    }
+    Ok(resp)
+}
+
+pub fn add_stewarship_group(
+    db: web::Data<Pool>,
+    item: web::Json<InputStewardgroup>,
+) -> Result<GenericResponse<()>, diesel::result::Error> {
+    let mut resp = GenericResponse::default_error("Steward group creation failed");
+    let conn = db.get().unwrap();
+    let leaderinfo = members.find(item.leader_id.unwrap()).first::<Member>(&conn);
+    if let Err(_) = leaderinfo {
+        resp.status = String::from("Group leader not found");
+        return Ok(resp);
+    }
+    let leaderinfo = leaderinfo.unwrap();
+    let leadername = match &leaderinfo.othernames {
+        Some(n) => format!(
+            "{} {} {}",
+            (leaderinfo).firstname,
+            n,
+            (leaderinfo).surname
+        ),
+        None => format!("{} {}", (&leaderinfo).firstname, (&leaderinfo).surname),
+    };
+    let new_group = NewGroup {
+        name: &item.name.as_ref().unwrap().as_str(),
+        leader: leaderinfo.id,
+        date_created: chrono::Local::now().naive_local(),
+        status: "ACTIVE",
+        leader_name: leadername.as_str(),
+    };
+    let result = diesel::insert_into(stewardgroups)
+        .values(&new_group)
+        .execute(&conn)?;
+    if result > 0 {
+        resp.code = 0;
+        resp.status = String::from("Success");
     }
     Ok(resp)
 }
