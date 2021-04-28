@@ -41,6 +41,7 @@ async fn main() -> std::io::Result<()> {
             .route("/members/{id}", web::get().to(handler::get_member_by_id))
             .route("/members", web::post().to(handler::add_member))
             .route("/members", web::put().to(handler::update_member))
+            .route("/members/{id}", web::delete().to(handler::delete_member))
     })
     .bind("127.0.0.1:8080")?
     .run()

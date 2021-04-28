@@ -289,3 +289,32 @@ pub fn update_single_member(
     }
     Ok(resp)
 }
+
+pub fn delete_single_member(
+    db: web::Data<Pool>,
+    member_id: web::Path<i32>,
+) -> Result<GenericResponse<String>, diesel::result::Error> {
+    let mut resp = GenericResponse::default_error("Member deletion failed");
+    let conn = db.get().unwrap();
+    let memeberinfo: Result<Member, diesel::result::Error> =
+        members.find(member_id.into_inner()).first::<Member>(&conn);
+    match memeberinfo {
+        Ok(mut member) => {
+            member.status = Some(String::from("DELETED"));
+            member.modified_date = Some(chrono::Local::now().naive_local());
+            let updated = diesel::update(members.find(member.id))
+                .set(&member)
+                .execute(&conn)
+                .unwrap();
+            if updated > 0 {
+                resp.code = 0;
+                resp.status = String::from("Success");
+            }
+        }
+        Err(e) => {
+            println!("Member not found: ErrorMessage: {:?}", e);
+            resp.status = String::from("Member not found");
+        }
+    }
+    Ok(resp)
+}
