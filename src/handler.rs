@@ -4,10 +4,11 @@ use actix_web::{Error, HttpResponse};
 
 use crate::{
     db::{
-        add_single_user, delete_single_user, get_all_users, get_user_by_userid, perform_login_user,
-        update_password, update_single_user,
+        add_single_member, add_single_user, delete_single_user, get_all_members, get_all_users,
+        get_members_by_userid, get_user_by_userid, perform_login_user, update_password,
+        update_single_user,
     },
-    model::{ChangeUserPassword, InputUser, LoginUser},
+    model::{ChangeUserPassword, InputMember, InputUser, LoginUser},
 };
 
 pub async fn get_users(db: web::Data<Pool>) -> Result<HttpResponse, Error> {
@@ -76,6 +77,35 @@ pub async fn change_user_password(
     item: web::Json<ChangeUserPassword>,
 ) -> Result<HttpResponse, Error> {
     Ok(web::block(move || update_password(db, item.into_inner()))
+        .await
+        .map(|resp| HttpResponse::Ok().json(resp))
+        .map_err(|_| HttpResponse::InternalServerError())?)
+}
+
+pub async fn get_members(db: web::Data<Pool>) -> Result<HttpResponse, Error> {
+    Ok(web::block(move || get_all_members(db))
+        .await
+        .map(|resp| HttpResponse::Ok().json(resp))
+        .map_err(|_| HttpResponse::InternalServerError())?)
+}
+
+pub async fn get_member_by_id(
+    db: web::Data<Pool>,
+    id: web::Path<i32>,
+) -> Result<HttpResponse, Error> {
+    Ok(
+        web::block(move || get_members_by_userid(db, id.into_inner()))
+            .await
+            .map(|resp| HttpResponse::Ok().json(resp))
+            .map_err(|_| HttpResponse::InternalServerError())?,
+    )
+}
+
+pub async fn add_member(
+    db: web::Data<Pool>,
+    item: web::Json<InputMember>,
+) -> Result<HttpResponse, Error> {
+    Ok(web::block(move || add_single_member(db, item))
         .await
         .map(|resp| HttpResponse::Ok().json(resp))
         .map_err(|_| HttpResponse::InternalServerError())?)

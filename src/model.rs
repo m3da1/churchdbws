@@ -77,3 +77,66 @@ impl<T> GenericResponse<T> {
         }
     }
 }
+
+#[derive(Debug, Serialize, Deserialize, Queryable, Identifiable)]
+pub struct Member {
+    pub id: i32,
+    pub surname: String,
+    pub firstname: String,
+    pub othernames: Option<String>,
+    pub dob: Option<chrono::NaiveDate>,
+    pub gender: Option<String>,
+    pub maritalstatus: Option<String>,
+    pub employed: Option<String>,
+    pub occupation: Option<String>,
+    pub company: Option<String>,
+    pub companylocation: Option<String>,
+    pub residence: Option<String>,
+    pub mobile: Option<String>,
+    pub email: Option<String>,
+    pub passport: Option<String>,
+    pub datecreated: Option<chrono::NaiveDateTime>,
+    pub status: Option<String>,
+    pub modified_date: Option<chrono::NaiveDateTime>,
+    pub presbytery: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct InputMember {
+    pub id: Option<i32>,
+    pub surname: String,
+    pub firstname: String,
+    pub othernames: String,
+    pub dob: chrono::NaiveDate,
+    pub gender: String,
+    pub maritalstatus: String,
+    pub employed: String,
+    pub occupation: String,
+    pub company: String,
+    pub companylocation: String,
+    pub residence: String,
+    pub mobile: String,
+    pub email: String,
+    pub presbytery: String,
+}
+
+#[derive(Debug, Insertable)]
+#[table_name = "members"]
+pub struct NewMember<'a> {
+    pub surname: &'a str,
+    pub firstname: &'a str,
+    pub othernames: &'a str,
+    pub dob: chrono::NaiveDate,
+    pub gender: &'a str,
+    pub maritalstatus: &'a str,
+    pub employed: &'a str,
+    pub occupation: &'a str,
+    pub company: &'a str,
+    pub companylocation: &'a str,
+    pub residence: &'a str,
+    pub mobile: &'a str,
+    pub email: &'a str,
+    pub presbytery: &'a str,
+    pub datecreated: chrono::NaiveDateTime,
+    pub status: &'a str,
+}

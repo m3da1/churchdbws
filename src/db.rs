@@ -1,6 +1,10 @@
+use super::schema::members::dsl::*;
 use super::schema::users::dsl::*;
 use super::Pool;
-use crate::{diesel::ExpressionMethods, model::ChangeUserPassword};
+use crate::{
+    diesel::ExpressionMethods,
+    model::{ChangeUserPassword, InputMember, Member, NewMember},
+};
 use crate::{
     diesel::QueryDsl,
     model::{GenericResponse, LoginUser, NewUser, User},
@@ -180,6 +184,67 @@ pub fn update_password(
             resp.code = 0;
             resp.status = String::from("Success");
         }
+    }
+    Ok(resp)
+}
+
+pub fn get_all_members(
+    db: web::Data<Pool>,
+) -> Result<GenericResponse<Vec<Member>>, diesel::result::Error> {
+    let mut resp = GenericResponse::no_data();
+    let conn = db.get().unwrap();
+    let items = members.load::<Member>(&conn)?;
+    if items.len() > 0 {
+        resp.code = 0;
+        resp.status = String::from("Success");
+        resp.data = Some(items);
+    }
+    Ok(resp)
+}
+
+pub fn get_members_by_userid(
+    db: web::Data<Pool>,
+    user_id: i32,
+) -> Result<GenericResponse<Member>, diesel::result::Error> {
+    let mut resp = GenericResponse::no_data();
+    let conn = db.get().unwrap();
+    let data = members.find(user_id).first::<Member>(&conn);
+    if let Ok(u) = data {
+        resp.code = 0;
+        resp.status = String::from("Success");
+        resp.data = Some(u);
+    }
+    Ok(resp)
+}
+
+pub fn add_single_member(
+    db: web::Data<Pool>,
+    item: web::Json<InputMember>,
+) -> Result<GenericResponse<String>, diesel::result::Error> {
+    let mut resp = GenericResponse::default_error("Member creation failed");
+    let conn = db.get().unwrap();
+    let new_member = NewMember {
+        surname: &item.surname,
+        firstname: &item.firstname,
+        othernames: &item.othernames,
+        dob: item.dob,
+        gender: &item.gender,
+        maritalstatus: &item.maritalstatus,
+        employed: &item.employed,
+        occupation: &item.occupation,
+        company: &item.company,
+        companylocation: &item.companylocation,
+        residence: &item.residence,
+        mobile: &item.mobile,
+        email: &item.email,
+        presbytery: &item.presbytery,
+        datecreated: chrono::Local::now().naive_local(),
+        status: "ACTIVE"
+    };
+    let result = insert_into(members).values(&new_member).execute(&conn)?;
+    if result > 0 {
+        resp.code = 0;
+        resp.status = String::from("Success");
     }
     Ok(resp)
 }
