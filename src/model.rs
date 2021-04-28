@@ -78,7 +78,7 @@ impl<T> GenericResponse<T> {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Queryable, Identifiable)]
+#[derive(Debug, Serialize, Deserialize, Queryable, Identifiable, AsChangeset)]
 pub struct Member {
     pub id: i32,
     pub surname: String,

@@ -239,12 +239,53 @@ pub fn add_single_member(
         email: &item.email,
         presbytery: &item.presbytery,
         datecreated: chrono::Local::now().naive_local(),
-        status: "ACTIVE"
+        status: "ACTIVE",
     };
     let result = insert_into(members).values(&new_member).execute(&conn)?;
     if result > 0 {
         resp.code = 0;
         resp.status = String::from("Success");
+    }
+    Ok(resp)
+}
+
+pub fn update_single_member(
+    db: web::Data<Pool>,
+    item: web::Json<InputMember>,
+) -> Result<GenericResponse<String>, diesel::result::Error> {
+    let mut resp = GenericResponse::default_error("Member update failed");
+    let conn = db.get().unwrap();
+    let memberinfo: Result<Member, diesel::result::Error> =
+        members.find(&item.id.unwrap()).first::<Member>(&conn);
+    if let Err(_) = memberinfo {
+        resp.status = String::from("Member not found");
+        return Ok(resp);
+    }
+    if let Ok(mut member) = memberinfo {
+        member.surname = item.surname.clone();
+        member.firstname = item.firstname.clone();
+        member.othernames = Some(item.othernames.clone());
+        member.dob = Some(item.dob);
+        member.gender = Some(item.gender.clone());
+        member.maritalstatus = Some(item.maritalstatus.clone());
+        member.employed = Some(item.employed.clone());
+        member.occupation = Some(item.occupation.clone());
+        member.company = Some(item.company.clone());
+        member.companylocation = Some(item.companylocation.clone());
+        member.residence = Some(item.residence.clone());
+        member.mobile = Some(item.mobile.clone());
+        member.email = Some(item.email.clone());
+        member.presbytery = Some(item.presbytery.clone());
+        member.modified_date = Some(chrono::Local::now().naive_local());
+        let updated_result = diesel::update(members.find(&item.id.unwrap()))
+            .set(&member)
+            .execute(&conn)
+            .unwrap();
+        println!("Updated Result: {:?}", updated_result);
+        if updated_result > 0 {
+            resp.code = 0;
+            resp.status = String::from("Success");
+        }
     }
     Ok(resp)
 }
