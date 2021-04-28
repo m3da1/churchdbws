@@ -41,6 +41,7 @@ table! {
         date_created -> Datetime,
         status -> Nullable<Varchar>,
         modified_date -> Nullable<Datetime>,
+        leader_name -> Nullable<Varchar>,
     }
 }
 

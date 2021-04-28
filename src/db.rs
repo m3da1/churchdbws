@@ -1,9 +1,10 @@
 use super::schema::members::dsl::*;
+use super::schema::stewardgroups::dsl::*;
 use super::schema::users::dsl::*;
 use super::Pool;
 use crate::{
     diesel::ExpressionMethods,
-    model::{ChangeUserPassword, InputMember, Member, NewMember},
+    model::{ChangeUserPassword, InputMember, Member, NewMember, Stewardgroup},
 };
 use crate::{
     diesel::QueryDsl,
@@ -12,8 +13,6 @@ use crate::{
 };
 use crate::{diesel::RunQueryDsl, model::InputUser};
 use actix_web::web;
-use diesel::insert_into;
-// use diesel::dsl::{delete, insert_into};
 
 pub fn get_all_users(
     pool: web::Data<Pool>,
@@ -61,7 +60,9 @@ pub fn add_single_user(
         firstname: &item.firstname,
         lastname: &item.lastname,
     };
-    let result = insert_into(users).values(&new_user).execute(&conn)?;
+    let result = diesel::insert_into(users)
+        .values(&new_user)
+        .execute(&conn)?;
     if result > 0 {
         resp.code = 0;
         resp.status = String::from("Success");
@@ -241,7 +242,9 @@ pub fn add_single_member(
         datecreated: chrono::Local::now().naive_local(),
         status: "ACTIVE",
     };
-    let result = insert_into(members).values(&new_member).execute(&conn)?;
+    let result = diesel::insert_into(members)
+        .values(&new_member)
+        .execute(&conn)?;
     if result > 0 {
         resp.code = 0;
         resp.status = String::from("Success");
@@ -315,6 +318,35 @@ pub fn delete_single_member(
             println!("Member not found: ErrorMessage: {:?}", e);
             resp.status = String::from("Member not found");
         }
+    }
+    Ok(resp)
+}
+
+pub fn get_stewardship_groups(
+    db: web::Data<Pool>,
+) -> Result<GenericResponse<Vec<Stewardgroup>>, diesel::result::Error> {
+    let mut resp = GenericResponse::no_data();
+    let conn = db.get().unwrap();
+    let items = stewardgroups.load::<Stewardgroup>(&conn)?;
+    if items.len() > 0 {
+        resp.code = 0;
+        resp.status = String::from("Success");
+        resp.data = Some(items);
+    }
+    Ok(resp)
+}
+
+pub fn get_single_steward_group(
+    db: web::Data<Pool>,
+    group_id: i32,
+) -> Result<GenericResponse<Stewardgroup>, diesel::result::Error> {
+    let mut resp = GenericResponse::no_data();
+    let conn = db.get().unwrap();
+    let group = stewardgroups.find(group_id).first::<Stewardgroup>(&conn);
+    if let Ok(g) = group {
+        resp.code = 0;
+        resp.status = String::from("Success");
+        resp.data = Some(g);
     }
     Ok(resp)
 }

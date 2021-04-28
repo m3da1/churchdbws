@@ -140,3 +140,24 @@ pub struct NewMember<'a> {
     pub datecreated: chrono::NaiveDateTime,
     pub status: &'a str,
 }
+
+/**
+  stewardgroups (id) {
+        id -> Integer,
+        name -> Nullable<Varchar>,
+        leader -> Integer,
+        date_created -> Datetime,
+        status -> Nullable<Varchar>,
+        modified_date -> Nullable<Datetime>,
+    }
+*/
+#[derive(Debug, Serialize, Deserialize, Queryable, Identifiable, AsChangeset)]
+pub struct Stewardgroup {
+    pub id: i32,
+    pub name: Option<String>,
+    pub leader: i32,
+    pub date_created: chrono::NaiveDateTime,
+    pub status: Option<String>,
+    pub modified_date: Option<chrono::NaiveDateTime>,
+    pub leader_name: Option<String>
+}
