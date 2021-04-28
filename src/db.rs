@@ -367,12 +367,7 @@ pub fn add_stewarship_group(
     }
     let leaderinfo = leaderinfo.unwrap();
     let leadername = match &leaderinfo.othernames {
-        Some(n) => format!(
-            "{} {} {}",
-            (leaderinfo).firstname,
-            n,
-            (leaderinfo).surname
-        ),
+        Some(n) => format!("{} {} {}", (leaderinfo).firstname, n, (leaderinfo).surname),
         None => format!("{} {}", (&leaderinfo).firstname, (&leaderinfo).surname),
     };
     let new_group = NewGroup {
@@ -388,6 +383,79 @@ pub fn add_stewarship_group(
     if result > 0 {
         resp.code = 0;
         resp.status = String::from("Success");
+    }
+    Ok(resp)
+}
+
+pub fn update_single_steward_group(
+    db: web::Data<Pool>,
+    item: web::Json<InputStewardgroup>,
+) -> Result<GenericResponse<()>, diesel::result::Error> {
+    let mut resp = GenericResponse::default_error("Steward group creation failed");
+    let conn = db.get().unwrap();
+    if let None = item.id {
+        resp.status = String::from("Invalid group id");
+        return Ok(resp);
+    }
+    let group: Result<Stewardgroup, diesel::result::Error> = stewardgroups
+        .find(item.id.unwrap())
+        .first::<Stewardgroup>(&conn);
+    if let Err(e) = group {
+        println!("Error: {:?}", e);
+        resp.status = String::from("Group not found");
+        return Ok(resp);
+    };
+    let leaderinfo = members.find(item.leader_id.unwrap()).first::<Member>(&conn);
+    if let Err(_) = leaderinfo {
+        resp.status = String::from("Group leader not found");
+        return Ok(resp);
+    }
+    let leaderinfo = leaderinfo.unwrap();
+    let leadername = match &leaderinfo.othernames {
+        Some(n) => format!("{} {} {}", (leaderinfo).firstname, n, (leaderinfo).surname),
+        None => format!("{} {}", (&leaderinfo).firstname, (&leaderinfo).surname),
+    };
+    if let Ok(mut stg) = group {
+        stg.name = item.name.clone();
+        stg.leader = leaderinfo.id;
+        stg.modified_date = Some(chrono::Local::now().naive_local());
+        stg.leader_name = Some(leadername);
+        let updated_result = diesel::update(stewardgroups.find(&stg.id))
+            .set(&stg)
+            .execute(&conn)
+            .unwrap();
+        if updated_result > 0 {
+            resp.code = 0;
+            resp.status = String::from("Success");
+        }
+    }
+    Ok(resp)
+}
+
+pub fn delete_single_steward_group(
+    db: web::Data<Pool>,
+    group_id: i32,
+) -> Result<GenericResponse<()>, diesel::result::Error> {
+    let mut resp = GenericResponse::default_error("Steward group creation failed");
+    let conn = db.get().unwrap();
+    let groupinfo = stewardgroups.find(group_id).first::<Stewardgroup>(&conn);
+    match groupinfo {
+        Ok(mut stgroup) => {
+            stgroup.status = Some(String::from("DELETED"));
+            stgroup.modified_date = Some(chrono::Local::now().naive_local());
+            let updated = diesel::update(stewardgroups.find(stgroup.id))
+                .set(&stgroup)
+                .execute(&conn)
+                .unwrap();
+            if updated > 0 {
+                resp.code = 0;
+                resp.status = String::from("Success");
+            }
+        }
+        Err(e) => {
+            println!("Stewardship not found found: ErrorMessage: {:?}", e);
+            resp.status = String::from("Steward group not found");
+        }
     }
     Ok(resp)
 }

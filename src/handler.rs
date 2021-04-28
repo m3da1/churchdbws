@@ -5,9 +5,10 @@ use actix_web::{Error, HttpResponse};
 use crate::{
     db::{
         add_single_member, add_single_user, add_stewarship_group, delete_single_member,
-        delete_single_user, get_all_members, get_all_users, get_members_by_userid,
-        get_single_steward_group, get_stewardship_groups, get_user_by_userid, perform_login_user,
-        update_password, update_single_member, update_single_user,
+        delete_single_steward_group, delete_single_user, get_all_members, get_all_users,
+        get_members_by_userid, get_single_steward_group, get_stewardship_groups,
+        get_user_by_userid, perform_login_user, update_password, update_single_member,
+        update_single_steward_group, update_single_user,
     },
     model::{ChangeUserPassword, InputMember, InputStewardgroup, InputUser, LoginUser},
 };
@@ -155,8 +156,30 @@ pub async fn add_steward_group(
     db: web::Data<Pool>,
     group_info: web::Json<InputStewardgroup>,
 ) -> Result<HttpResponse, Error> {
+    Ok(web::block(move || add_stewarship_group(db, group_info))
+        .await
+        .map(|resp| HttpResponse::Ok().json(resp))
+        .map_err(|_| HttpResponse::InternalServerError())?)
+}
+
+pub async fn update_steward_group(
+    db: web::Data<Pool>,
+    group_info: web::Json<InputStewardgroup>,
+) -> Result<HttpResponse, Error> {
     Ok(
-        web::block(move || add_stewarship_group(db, group_info))
+        web::block(move || update_single_steward_group(db, group_info))
+            .await
+            .map(|resp| HttpResponse::Ok().json(resp))
+            .map_err(|_| HttpResponse::InternalServerError())?,
+    )
+}
+
+pub async fn delete_steward_group(
+    db: web::Data<Pool>,
+    group_id: web::Path<i32>,
+) -> Result<HttpResponse, Error> {
+    Ok(
+        web::block(move || delete_single_steward_group(db, group_id.into_inner()))
             .await
             .map(|resp| HttpResponse::Ok().json(resp))
             .map_err(|_| HttpResponse::InternalServerError())?,
