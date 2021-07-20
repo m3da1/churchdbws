@@ -459,3 +459,5 @@ pub fn delete_single_steward_group(
     }
     Ok(resp)
 }
+
+// pub fn get_all_zonal_groups(db: web::Data<Pool>) ->

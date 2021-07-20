@@ -185,3 +185,12 @@ pub async fn delete_steward_group(
             .map_err(|_| HttpResponse::InternalServerError())?,
     )
 }
+
+// pub async fn get_zonal_groups(db: web::Data<Pool>) -> Result<HttpResponse, Error> {
+//     Ok(
+//         web::block(move || get_all_zonal_groups(db))
+//             .await
+//             .map(|resp| HttpResponse::Ok().json(resp))
+//             .map_err(|_| HttpResponse::InternalServerError())?,
+//     )
+// }
